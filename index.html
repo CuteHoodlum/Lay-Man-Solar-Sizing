@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Solar Correction</title>
+
+    <!-- Font Awesome -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="audit-container">
+      <h1><i class="fas fa-solar-panel"></i> Solar System Sizing Calculator</h1>
+
+      <!-- DESKTOP TABLE VIEW -->
+      <div class="table-container">
+        <table class="audit-table">
+          <thead>
+            <tr class="header-row">
+              <th><i class="fas fa-plug"></i> Appliance</th>
+              <th><i class="fas fa-hashtag"></i> Qty</th>
+              <th><i class="fas fa-bolt"></i> Watts / hp</th>
+
+              <th class="hidden-columns output-header">
+                <i class="fas fa-calculator"></i> Total Watts
+              </th>
+
+              <!-- <th class="tooltip">
+                <i class="fas fa-wave-square"></i> Power Factor
+                <span class="tooltiptext">
+                  Ratio of real power to apparent power (0.1–1.0). Typical: LED
+                  ≈ 0.9, Motor ≈ 0.8
+                </span>
+              </th> -->
+
+              <th><i class="fas fa-clock"></i> Hours/Day</th>
+
+              <th class="hidden-columns output-header" style="display: none">
+                <i class="fas fa-chart-line"></i> Apparent Power (VA)
+              </th>
+              <th class="hidden-columns output-header" style="display: none">
+                <i class="fas fa-clock-rotate-left"></i> VA-Hours/Day
+              </th>
+              <th class="hidden-columns output-header">
+                <i class="fas fa-battery-full"></i> Watt-Hours/Day
+              </th>
+              <th><i class="fas fa-tools"></i> Action</th>
+            </tr>
+          </thead>
+
+          <tbody id="item-container">
+            <tr class="item-row">
+              <!-- Appliance -->
+              <td>
+                <select
+                  id="appliance"
+                  class="gadget-description"
+                  aria-label="Appliance"
+                >
+                  <option value="" disabled selected>
+                    -- Select an Appliance --
+                  </option>
+
+                  <!-- Lighting -->
+                  <option value="led-bulb">LED Bulb</option>
+
+                  <!-- Entertainment -->
+                  <option value="television">Television</option>
+
+                  <!-- Cooling -->
+                  <option value="fan">Fan</option>
+                  <option value="air-conditioner">Air Conditioner</option>
+
+                  <!-- Kitchen -->
+                  <option value="refrigerator">Refrigerator</option>
+                  <option value="blender">Blender</option>
+                  <option value="dish-washer">Dish Washer</option>
+
+                  <!-- Laundry -->
+                  <option value="washing-machine">Washing Machine</option>
+
+                  <!-- Others -->
+                  <option value="water-pump">Water Pump</option>
+                  <option value="heater">Heater</option>
+                  <option value="other">Other</option>
+                </select>
+              </td>
+
+              <!-- Qty -->
+              <td>
+                <input
+                  type="number"
+                  pattern="[0-9]*"
+                  class="quantity-input"
+                  min="0"
+                  step="1"
+                  placeholder="Qty"
+                  aria-label="Quantity"
+                />
+              </td>
+
+              <!-- Watts / hp -->
+              <td class="input-select-cell">
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  class="watts"
+                  min="0"
+                  step="0.1"
+                  placeholder="Enter power"
+                  aria-label="Power value"
+                />
+                <select class="power-type" aria-label="Power unit">
+                  <option value="w">w</option>
+                  <option value="hp">hp</option>
+                </select>
+              </td>
+
+              <!-- Total Watts (output) -->
+              <td class="hidden-columns">
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  class="total-watts output-field"
+                  readonly
+                  placeholder="Auto"
+                  aria-label="Total watts"
+                />
+              </td>
+
+              <!-- PF -->
+              <td style="display: none">
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  class="power-factor"
+                  min="0.1"
+                  max="1"
+                  step="0.01"
+                  placeholder="0.9"
+                  aria-label="Power factor"
+                />
+              </td>
+
+              <!-- Hours -->
+              <td class="hours-cell">
+                <div class="multi-time-blocks">
+                  <!-- First block (always visible) -->
+                  <div class="time-block">
+                    <input type="time" class="start-time" value="18:00" />
+                    <span>–</span>
+                    <input type="time" class="end-time" value="22:00" />
+                    <button
+                      type="button"
+                      class="remove-block"
+                      style="display: none"
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  <!-- Add more button -->
+                  <button type="button" class="add-block-btn">
+                    <i class="fas fa-plus"></i> Add time slot
+                  </button>
+
+                  <!-- Total calculated hours -->
+                  <div class="total-hours-display">
+                    <strong><span class="total-h">4.0</span> hours/day</strong>
+                    <input type="hidden" class="hours" value="4.0" />
+                  </div>
+                </div>
+              </td>
+
+              <!-- Apparent Power (output) -->
+              <td class="hidden-columns" style="display: none">
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  class="apparent-power output-field"
+                  readonly
+                  placeholder="Auto"
+                  aria-label="Apparent power (VA)"
+                />
+              </td>
+
+              <!-- VA-h (output) -->
+              <td class="hidden-columns" style="display: none">
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  class="apparent-power-hour output-field"
+                  readonly
+                  placeholder="Auto"
+                  aria-label="VA-hours per day"
+                />
+              </td>
+
+              <!-- Wh (output) -->
+              <td class="hidden-columns">
+                <input
+                  type="number"
+                  inputmode="decimal"
+                  class="total-watts-hour output-field"
+                  readonly
+                  placeholder="Auto"
+                  aria-label="Watt-hours per day"
+                />
+              </td>
+
+              <!-- Remove -->
+              <td>
+                <button
+                  class="remove-btn"
+                  onclick="removeInput(this)"
+                  aria-label="Remove row"
+                >
+                  <i class="fas fa-times"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- MOBILE CARD VIEW -->
+      <div class="mobile-card-container" id="mobile-card-container">
+        <!-- Cards are generated by JS -->
+      </div>
+
+      <!-- Primary actions -->
+      <div class="button-group">
+        <button class="btn btn-primary" onclick="addmore()">
+          <i class="fas fa-plus"></i>
+          Add Appliance
+        </button>
+        <button class="btn btn-success" onclick="calculate()">
+          <i class="fas fa-calculator"></i>
+          Calculate System
+        </button>
+      </div>
+
+      <!-- Inverter / Battery / Panel actions -->
+      <div class="action-buttons button-group" style="margin-top: 12px">
+        <button
+          class="btn btn-secondary"
+          onclick="addInverterSizing()"
+          id="add-inverter"
+        >
+          <i class="fas fa-microchip"></i>
+          Add Inverter Sizing
+        </button>
+        <button
+          class="btn btn-secondary"
+          onclick="addBatterySizing()"
+          id="add-battery"
+        >
+          <i class="fas fa-battery-half"></i>
+          Add Battery Sizing
+        </button>
+        <button
+          class="btn btn-secondary"
+          onclick="addPanelSizing()"
+          id="add-panel"
+        >
+          <i class="fas fa-solar-panel"></i>
+          Add Panel Sizing
+        </button>
+      </div>
+
+      <!-- LOAD SUMMARY -->
+      <div
+        class="summary-section load-summary"
+        id="load-summary"
+        style="display: none"
+      >
+        <div class="section-header">
+          <h2 class="section-title">
+            <i class="fas fa-chart-pie"></i> Load Summary
+          </h2>
+        </div>
+
+        <div class="summary-grid">
+          <div class="summary-card">
+            <h3>Total Load</h3>
+            <div class="value" id="totalLoad">0</div>
+            <div class="unit">Watts</div>
+          </div>
+
+          <div class="summary-card" style="display: none">
+            <h3>Total Apparent Power</h3>
+            <div class="value" id="totalApparentPower">0</div>
+            <div class="unit">VA</div>
+          </div>
+
+          <div class="summary-card">
+            <h3>Daily Energy (Total)</h3>
+            <div class="value" id="dailyEnergy">0</div>
+            <div class="unit">Wh/day</div>
+          </div>
+
+          <div class="summary-card">
+            <h3>Daily Energy (Total)</h3>
+            <div class="value" id="kiloEnergy">0</div>
+            <div class="unit">kWh/day</div>
+          </div>
+
+          <!-- NEW: Day / Night banks -->
+          <div class="summary-card">
+            <h3>Daytime Energy (10:00–15:00)</h3>
+            <div class="value" id="dailyEnergyDay">0</div>
+            <div class="unit">Wh/day</div>
+          </div>
+
+          <div class="summary-card">
+            <h3>Night-time Energy</h3>
+            <div class="value" id="dailyEnergyNight">0</div>
+            <div class="unit">Wh/day</div>
+          </div>
+
+          <div class="summary-card">
+            <h3>Daytime Energy (kWh)</h3>
+            <div class="value" id="kiloEnergyDay">0</div>
+            <div class="unit">kWh/day</div>
+          </div>
+
+          <div class="summary-card">
+            <h3>Night-time Energy (kWh)</h3>
+            <div class="value" id="kiloEnergyNight">0</div>
+            <div class="unit">kWh/day</div>
+          </div>
+
+          <div class="summary-card" style="display: none">
+            <h3>Total Apparent Energy</h3>
+            <div class="value" id="totalApparentHour">0</div>
+            <div class="unit">VAH/day</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROGRESS INDICATOR -->
+      <!-- 
+      <div class="progress-indicator">
+        <div class="progress-step active" id="step-1">
+          <div class="step-number">1</div>
+          <div class="step-title">Load Analysis</div>
+        </div>
+        <div class="progress-step" id="step-2">
+          <div class="step-number">2</div>
+          <div class="step-title">Inverter Sizing</div>
+        </div>
+        <div class="progress-step" id="step-3">
+          <div class="step-number">3</div>
+          <div class="step-title">Battery Sizing</div>
+        </div>
+        <div class="progress-step" id="step-4">
+          <div class="step-number">4</div>
+          <div class="step-title">Panel Sizing</div>
+        </div>
+      </div> -->
+
+      <!-- Dynamic sections get appended here -->
+      <div id="inverter-container"></div>
+      <div id="battery-container"></div>
+      <div id="panel-container"></div>
+    </div>
+
+    <!-- Data + App -->
+    <script src="inverter-data.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
