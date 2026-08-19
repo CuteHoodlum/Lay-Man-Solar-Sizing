@@ -30,6 +30,16 @@ const toNumber = (v, d = 0) => {
   return Number.isFinite(n) ? n : d;
 };
 
+// Whether the mobile/tablet card layout is the one actually on screen.
+// Derived from the rendered CSS rather than a duplicated pixel value, so
+// moving the table/card breakpoint in styles.css can never leave the JS
+// reading from the wrong view.
+const isCardViewActive = () => {
+  const table = document.querySelector(".table-container");
+  if (!table) return false;
+  return window.getComputedStyle(table).display === "none";
+};
+
 const toggleBtn = (btn, on) => {
   if (!btn) return;
   btn.disabled = !on;
@@ -85,8 +95,8 @@ function moveActionButtonsToOriginalPosition() {
     actionButtons.parentNode.removeChild(actionButtons);
   }
 
-  // MOBILE: Put buttons directly after Load Summary
-  if (window.innerWidth <= 768) {
+  // MOBILE/TABLET: Put buttons directly after Load Summary
+  if (isCardViewActive()) {
     const loadSummary = document.getElementById("load-summary");
     if (loadSummary && loadSummary.parentNode) {
       loadSummary.parentNode.insertBefore(actionButtons, loadSummary.nextSibling);
@@ -899,8 +909,8 @@ function validateBeforeCalculate() {
   let allValid = true;
   const errorMessages = [];
 
-  // Detect if we're in mobile view (cards are visible, table is hidden)
-  const isMobileView = window.innerWidth <= 768;
+  // Detect if we're in the card view (cards are visible, table is hidden)
+  const isMobileView = isCardViewActive();
 
   rows.forEach((row, index) => {
     const select = row.querySelector(".gadget-description");

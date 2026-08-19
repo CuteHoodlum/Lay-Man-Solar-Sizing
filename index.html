@@ -128,36 +128,37 @@
       <!-- DESKTOP TABLE VIEW -->
       <div class="table-container">
         <table class="audit-table">
-          <colgroup>
-            <col style="width: 22%" />
-            <col style="width: 8%" />
-            <col style="width: 15%" />
-            <col style="width: 10%" />
-            <col style="width: 25%" />
-            <col style="width: 0" />
-            <col style="width: 0" />
-            <col style="width: 10%" />
-            <col style="width: 8%" />
-          </colgroup>
+          <!-- NOTE: deliberately no <colgroup>. Several of this table's
+               columns are display:none until Calculate runs, and a
+               display:none cell does not occupy a column slot — the cells
+               after it shift left. That makes a positional <colgroup>
+               address the wrong columns (Hours/Day inherited the Total
+               Watts slot, Action inherited Power Factor's, both collapsing
+               to 0). Column widths are therefore set on the header cells
+               themselves in styles.css, where each width always travels
+               with its own column. -->
           <thead>
             <tr class="header-row">
-              <th><i class="fas fa-plug"></i> Appliance</th>
-              <th><i class="fas fa-hashtag"></i> Qty</th>
-              <th><i class="fas fa-bolt"></i> Watts / hp</th>
+              <th class="th-appliance"><i class="fas fa-plug"></i> Appliance</th>
+              <th class="th-qty"><i class="fas fa-hashtag"></i> Qty</th>
+              <th class="th-power"><i class="fas fa-bolt"></i> Watts / hp</th>
 
-              <th class="hidden-columns output-header">
+              <th class="hidden-columns output-header th-total-watts">
                 <i class="fas fa-calculator"></i> Total Watts
               </th>
 
-              <!-- <th class="tooltip">
+              <!-- Power Factor column. Kept permanently hidden (matching the
+                   corresponding cell in every body row), but it MUST exist as
+                   a <th> so the header and body have the same number of
+                   columns. Without it the body's Power Factor cell shifted
+                   every later column one place left relative to the header,
+                   which put the header's "Action" label over column 8 while
+                   the body's Action button sat in column 9. -->
+              <th class="pf-column" aria-hidden="true">
                 <i class="fas fa-wave-square"></i> Power Factor
-                <span class="tooltiptext">
-                  Ratio of real power to apparent power (0.1–1.0). Typical: LED
-                  ≈ 0.9, Motor ≈ 0.8
-                </span>
-              </th> -->
+              </th>
 
-              <th><i class="fas fa-clock"></i> Hours/Day</th>
+              <th class="th-hours"><i class="fas fa-clock"></i> Hours/Day</th>
 
               <th class="hidden-columns output-header" style="display: none">
                 <i class="fas fa-chart-line"></i> Apparent Power (VA)
@@ -165,10 +166,10 @@
               <th class="hidden-columns output-header" style="display: none">
                 <i class="fas fa-clock-rotate-left"></i> VA-Hours/Day
               </th>
-              <th class="hidden-columns output-header">
+              <th class="hidden-columns output-header th-wh">
                 <i class="fas fa-battery-full"></i> Watt-Hours/Day
               </th>
-              <th><i class="fas fa-tools"></i> Action</th>
+              <th class="th-action"><i class="fas fa-tools"></i> Action</th>
             </tr>
           </thead>
 
@@ -223,21 +224,29 @@
                 />
               </td>
 
-              <!-- Watts / hp -->
-              <td class="input-select-cell">
-                <input
-                  type="number"
-                  inputmode="decimal"
-                  class="watts"
-                  min="0"
-                  step="0.1"
-                  placeholder="Enter power"
-                  aria-label="Power value"
-                />
-                <select class="power-type" aria-label="Power unit">
-                  <option value="w">w</option>
-                  <option value="hp">hp</option>
-                </select>
+              <!-- Watts / hp.
+                   The grid that pairs the power input with the unit select
+                   lives on an inner <div>, NOT on the <td>. Putting
+                   `display: grid` directly on the cell removed its
+                   table-cell role, so the browser wrapped it in an anonymous
+                   cell and pushed Hours/Day and Action out of the table's
+                   column structure entirely. -->
+              <td class="power-cell">
+                <div class="input-select-cell">
+                  <input
+                    type="number"
+                    inputmode="decimal"
+                    class="watts"
+                    min="0"
+                    step="0.1"
+                    placeholder="Enter power"
+                    aria-label="Power value"
+                  />
+                  <select class="power-type" aria-label="Power unit">
+                    <option value="w">w</option>
+                    <option value="hp">hp</option>
+                  </select>
+                </div>
               </td>
 
               <!-- Total Watts (output) -->

@@ -1380,14 +1380,10 @@ input::placeholder {
     margin-bottom: 14px;
   }
 
-  /* Hide table on mobile */
-  .table-container {
-    display: none;
-  }
-  /* Show mobile card layout */
-  .mobile-card-container {
-    display: block;
-  }
+  /* The table/card swap used to live here. It now happens at 1200px — see
+     the ADVANCED TABLE — DESKTOP COLUMN LAYOUT section — so that tablets
+     get the card layout too. Kept as a single rule there rather than
+     duplicated across two breakpoints. */
 
   .progress-indicator {
     gap: 8px;
@@ -1760,7 +1756,10 @@ input::placeholder {
 }
 
 .time-block input[type="time"] {
-  width: 100px;
+  /* 100px clipped the meridiem off "06:00 PM" in the card layout. 112px
+     fits the full value plus the clock affordance, and still lets two
+     inputs sit side by side inside a 320px-wide phone card. */
+  width: 112px;
   padding: 6px 10px;
   border: 1px solid var(--color-border-strong);
   border-radius: 6px;
@@ -2735,4 +2734,190 @@ input::placeholder {
   font-size: 13.5px !important;
   font-weight: 400 !important;
   margin-top: -10px !important;
+}
+
+/* ============================================
+   ADVANCED TABLE — DESKTOP COLUMN LAYOUT
+   ============================================
+   The load table previously used `table-layout: auto`, which handed every
+   surplus pixel to the last column: on a 1920px screen the Action column
+   (a single 40px round button) measured 426px while Hours/Day stayed
+   pinned at its 280px min-width. That is what produced the "compressed
+   table floating in a large empty card" look on desktop.
+
+   Switching to `table-layout: fixed` and driving the widths from the
+   <colgroup> makes the distribution intentional instead of residual.
+   Scoped to >=769px because the table is display:none below that
+   breakpoint, where the mobile card layout takes over instead. */
+
+/* Permanently-hidden Power Factor column. The <th> exists purely to keep
+   the header's column count equal to each body row's; see index.html. */
+.pf-column {
+  display: none;
+}
+
+/* The load table carries up to seven columns of inputs, which measurably
+   cannot fit a tablet without either crushing the cells or scrolling
+   sideways with the Action column clipped off. The already-built card
+   layout handles those widths far better, so the table/card switch now
+   happens at 1200px rather than 768px. Only the swap moves — every other
+   mobile rule keeps its original 768px breakpoint, and the card styles
+   themselves were already global. app.js reads the live computed display
+   of .table-container (isCardViewActive) instead of hardcoding a pixel
+   value, so the JS follows this breakpoint automatically. */
+@media (max-width: 1199px) {
+  .table-container {
+    display: none;
+  }
+  .mobile-card-container {
+    display: block;
+  }
+}
+
+@media (min-width: 1200px) {
+  .audit-table {
+    table-layout: fixed;
+    /* Percentage columns alone would happily crush their contents
+       (measured: the Hours cell needed 274px but was given 190px at
+       834px wide, so the time inputs overflowed their cell). A floor on
+       the table width means .table-container's existing `overflow-x:
+       auto` scrolls instead — the columns keep their proportions and
+       nothing is ever squashed. */
+    min-width: 860px;
+  }
+
+  /* Calculated state shows 7 columns instead of 5, so it needs more room
+     before scrolling kicks in. */
+  .show-outputs .audit-table {
+    min-width: 1040px;
+  }
+
+  /* Widths live on the header cells, not on <col> elements — see the note
+     in index.html. With `table-layout: fixed` the first row is what
+     establishes column widths, and a class on a <th> always travels with
+     that th's own column no matter how many earlier columns are hidden.
+
+     Default state — before Calculate reveals the output columns.
+     Visible columns sum to 100%. */
+  .th-appliance {
+    width: 28%;
+  }
+  .th-qty {
+    width: 9%;
+  }
+  .th-power {
+    width: 24%;
+  }
+  .th-hours {
+    width: 32%;
+  }
+  .th-action {
+    width: 7%;
+  }
+
+  /* After Calculate: Total Watts and Watt-Hours/Day become visible, so the
+     input columns give up room to make space for them. Visible columns
+     again sum to 100%. */
+  .show-outputs .th-appliance {
+    width: 19%;
+  }
+  .show-outputs .th-qty {
+    width: 6%;
+  }
+  .show-outputs .th-power {
+    width: 17%;
+  }
+  .show-outputs .th-total-watts {
+    width: 10%;
+  }
+  .show-outputs .th-hours {
+    width: 27%;
+  }
+  .show-outputs .th-wh {
+    width: 12%;
+  }
+  .show-outputs .th-action {
+    width: 9%;
+  }
+
+  /* The header is nowrap by default, which made the long output labels
+     ("WATT-HOURS/DAY") spill over the neighbouring column instead of
+     using the two lines available to them. Wrapping keeps every label
+     inside its own column at any width. */
+  .header-row th {
+    white-space: normal;
+    line-height: 1.25;
+  }
+
+  /* The time inputs were a fixed 100px, which clipped the AM/PM off
+     "06:00 PM". With a properly sized Hours column there is room for
+     them to breathe. */
+  .time-block input[type="time"] {
+    width: auto;
+    flex: 1 1 auto;
+    min-width: 118px;
+    padding: 8px 10px;
+    font-size: 0.95em;
+  }
+  .multi-time-blocks {
+    font-size: 0.95em;
+  }
+
+  /* With fixed layout the column percentage is authoritative, so the old
+     280px floor is no longer needed to reserve space — and leaving it in
+     would stop the column from ever shrinking on narrower desktops. */
+  .hours-cell {
+    min-width: 0;
+  }
+
+  /* Roomier gutters now that the columns are deliberately proportioned. */
+  .item-row td {
+    padding: 18px 14px;
+  }
+  .header-row th {
+    padding: 18px 14px;
+  }
+
+  /* The unit select only ever holds "w" or "hp", so it does not need 96px;
+     reclaiming that space widens the power input, which was measuring just
+     56px at 1440px. */
+  .input-select-cell {
+    grid-template-columns: 1fr 76px;
+  }
+  .input-select-cell .power-type {
+    width: 76px;
+    min-width: 76px;
+  }
+
+  /* Keep the Action button centred in its (now much narrower) column. */
+  .item-row td:last-child {
+    text-align: center;
+  }
+  .item-row td .remove-btn {
+    margin: 0 auto;
+  }
+
+  /* Primary actions read better as a left-anchored pair on desktop than
+     floating dead-centre across a very wide container. */
+  .button-group {
+    justify-content: flex-start;
+    gap: 16px;
+  }
+  .advanced-tools-buttons .btn-outline {
+    flex: 0 1 auto;
+  }
+}
+
+/* Very wide screens: cap the line length of the table so a 2560px monitor
+   does not stretch a five-input row across the full viewport. */
+@media (min-width: 1700px) {
+  #advanced-mode .table-container,
+  #advanced-mode .button-group,
+  #advanced-mode .advanced-tools-card,
+  #advanced-mode .advanced-mode-caption,
+  #advanced-mode .advanced-empty-state {
+    max-width: 1600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
 }
