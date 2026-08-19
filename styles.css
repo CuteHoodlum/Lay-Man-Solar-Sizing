@@ -1954,16 +1954,27 @@ input::placeholder {
   position: sticky;
   top: 0;
   z-index: 900;
-  background: var(--color-warning-text);
-  color: var(--color-bg);
+  background: var(--color-warning-bg-alt);
+  color: var(--color-warning-text);
+  border-bottom: 1px solid var(--color-warning-border);
   text-align: center;
-  padding: 10px 16px;
-  font-size: 14px;
+  padding: 6px 12px;
+  font-size: 12.5px;
   font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
+}
+
+/* Real bug fixed here: an author stylesheet's unconditional
+   `display: flex` on .offline-banner beats the browser's built-in
+   `[hidden] { display: none }` UA rule (author styles always win over
+   UA styles regardless of specificity), so the banner was rendering
+   visible on every page load no matter what the `hidden` attribute
+   said. This explicit override restores the expected behavior. */
+.offline-banner[hidden] {
+  display: none;
 }
 
 .app-tagline {
@@ -2668,4 +2679,60 @@ input::placeholder {
   font-size: 15px;
   margin-bottom: 18px;
   font-weight: 600;
+}
+
+/* --- Advanced Sizing Tools (secondary, de-emphasized legacy controls) --- */
+.action-buttons.advanced-tools-card {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.advanced-tools-header {
+  margin-bottom: 14px;
+}
+
+.advanced-tools-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+
+.advanced-tools-header p {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.advanced-tools-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.btn-outline {
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  border: 1.5px solid var(--color-border-alt);
+  box-shadow: none;
+  font-size: 14px;
+  padding: 12px 20px;
+}
+
+.btn-outline:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary-dark);
+  background: var(--color-green-bg);
+}
+
+.advanced-empty-state-hint {
+  color: var(--color-text-secondary) !important;
+  font-size: 13.5px !important;
+  font-weight: 400 !important;
+  margin-top: -10px !important;
 }

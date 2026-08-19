@@ -1,11 +1,13 @@
 // Solar Sizing Calculator — offline-first service worker.
 // Bump CACHE_NAME whenever a core asset changes so old caches are dropped.
-const CACHE_NAME = "solar-calc-v2";
+const CACHE_NAME = "solar-calc-v3";
 
 const CORE_ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
+  "./mode.js",
+  "./pwa.js",
   "./app.js",
   "./simple.js",
   "./inverter-data.js",
