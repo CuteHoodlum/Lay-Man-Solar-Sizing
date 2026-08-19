@@ -45,11 +45,11 @@ const REGIONS = [
 ];
 
 const USAGE_PRESETS = {
-  fewminutes: { label: "A few minutes", hours: 0.5, dayHours: 0.4, nightHours: 0.1 },
-  morning: { label: "Morning (a few hours)", hours: 3, dayHours: 3, nightHours: 0 },
-  afternoon: { label: "Afternoon", hours: 4, dayHours: 4, nightHours: 0 },
-  evening: { label: "Evening / Night", hours: 4, dayHours: 0, nightHours: 4 },
-  allday: { label: "All day (runs continuously)", hours: 24, dayHours: 12, nightHours: 12 },
+  fewminutes: { label: "A few minutes", timeRange: "~30 min/day", hours: 0.5, dayHours: 0.4, nightHours: 0.1 },
+  morning: { label: "Morning", timeRange: "~6am–9am", hours: 3, dayHours: 3, nightHours: 0 },
+  afternoon: { label: "Afternoon", timeRange: "~12pm–4pm", hours: 4, dayHours: 4, nightHours: 0 },
+  evening: { label: "Evening / Night", timeRange: "~6pm–10pm", hours: 4, dayHours: 0, nightHours: 4 },
+  allday: { label: "All day", timeRange: "runs continuously, 24h", hours: 24, dayHours: 12, nightHours: 12 },
 };
 
 const APPLIANCE_PRESETS = [
@@ -161,6 +161,16 @@ function computeSystem(state) {
   const region = getRegion(state.regionId);
   const a = { ...DEFAULT_ASSUMPTIONS, ...state.assumptions };
 
+  // Defense-in-depth: clamp assumptions to physically sane ranges so a
+  // corrupted localStorage value or a future "edit assumptions" UI can
+  // never divide by zero or push a result negative/Infinite.
+  a.batteryDoD = Math.min(1, Math.max(0.1, simpleToNumber(a.batteryDoD, DEFAULT_ASSUMPTIONS.batteryDoD)));
+  a.inverterEfficiency = Math.min(1, Math.max(0.5, simpleToNumber(a.inverterEfficiency, DEFAULT_ASSUMPTIONS.inverterEfficiency)));
+  a.systemLosses = Math.min(1, Math.max(0.3, simpleToNumber(a.systemLosses, DEFAULT_ASSUMPTIONS.systemLosses)));
+  a.safetyMargin = Math.max(1, simpleToNumber(a.safetyMargin, DEFAULT_ASSUMPTIONS.safetyMargin));
+  a.assumedPowerFactor = Math.min(1, Math.max(0.5, simpleToNumber(a.assumedPowerFactor, DEFAULT_ASSUMPTIONS.assumedPowerFactor)));
+  a.panelWattage = Math.max(50, simpleToNumber(a.panelWattage, DEFAULT_ASSUMPTIONS.panelWattage));
+
   let dailyWh = 0;
   let dayWh = 0;
   let nightWh = 0;
@@ -168,16 +178,20 @@ function computeSystem(state) {
 
   state.appliances.forEach((item) => {
     const usage = USAGE_PRESETS[item.usageKey] || USAGE_PRESETS.evening;
-    const itemW = simpleToNumber(item.watts) * simpleToNumber(item.qty, 1);
+    // Clamp to >= 0 so a stray negative or non-numeric input can never
+    // pull the whole system's numbers negative or produce NaN downstream.
+    const safeWatts = Math.max(0, simpleToNumber(item.watts));
+    const safeQty = Math.max(0, simpleToNumber(item.qty, 1));
+    const itemW = safeWatts * safeQty;
     peakLoadW += itemW;
     dailyWh += itemW * usage.hours;
     dayWh += itemW * usage.dayHours;
     nightWh += itemW * usage.nightHours;
   });
 
-  const systemVoltage = simpleToNumber(a.systemVoltage, scenario.systemVoltage) || scenario.systemVoltage;
-  const autonomyDays = simpleToNumber(a.autonomyDays, scenario.autonomyDays) || scenario.autonomyDays;
-  const sunHours = simpleToNumber(a.sunHours, region.sunHours) || region.sunHours;
+  const systemVoltage = Math.max(6, simpleToNumber(a.systemVoltage, scenario.systemVoltage) || scenario.systemVoltage);
+  const autonomyDays = Math.max(0.5, simpleToNumber(a.autonomyDays, scenario.autonomyDays) || scenario.autonomyDays);
+  const sunHours = Math.max(0.5, simpleToNumber(a.sunHours, region.sunHours) || region.sunHours);
 
   // Inverter: cover the worst case of everything running at once, with headroom.
   const inverterRequiredVA =
@@ -512,6 +526,7 @@ function renderApplianceRow(item) {
         <label class="appliance-field">
           <span>Power (Watts)</span>
           <input type="number" min="0" step="1" class="appliance-watts" data-field="watts" data-uid="${item.uid}" value="${item.watts}" />
+          ${!preset.custom ? `<span class="field-hint">Typical: ${preset.min}–${preset.max}W</span>` : ""}
         </label>
       </div>
       <details class="dont-know-details">
@@ -594,8 +609,9 @@ function renderUsageStep(body) {
             ${Object.entries(USAGE_PRESETS)
               .map(
                 ([key, u]) => `
-              <button type="button" class="usage-chip ${item.usageKey === key ? "selected" : ""}" data-uid="${item.uid}" data-usage="${key}">
+              <button type="button" class="usage-chip ${item.usageKey === key ? "selected" : ""}" data-uid="${item.uid}" data-usage="${key}" title="${u.timeRange}">
                 ${u.label}
+                <span class="usage-chip-time">${u.timeRange}</span>
               </button>`
               )
               .join("")}
@@ -651,6 +667,12 @@ function renderResultsStep(body) {
 
   body.innerHTML = `
     <p class="wizard-subtext">Based on your scenario, location, and appliances, here's what we recommend:</p>
+
+    <p class="estimate-disclaimer">
+      <i class="fas fa-circle-info"></i>
+      This is an estimate based on your inputs and standard solar assumptions.
+      Final system design should be confirmed by a qualified installer.
+    </p>
 
     <div class="results-grid">
       <div class="result-card">
