@@ -168,29 +168,29 @@ header {
   margin-bottom: 32px;
 }
 
+.app-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
 h1 {
-  font-size: 3rem;
+  font-size: 1.75rem;
   font-weight: 800;
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 6px;
   letter-spacing: -0.02em;
   position: relative;
+  line-height: 1.2;
 }
 
-h1::after {
-  content: "";
-  position: absolute;
-  bottom: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80px;
-  height: 4px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-  border-radius: 2px;
+@media (min-width: 640px) {
+  h1 {
+    font-size: 2.1rem;
+  }
 }
 
 .error {
@@ -1369,12 +1369,15 @@ input::placeholder {
   }
 
   h1 {
-    font-size: 1.75rem;
-    margin-bottom: 24px;
+    font-size: 1.4rem;
+    margin-bottom: 6px;
   }
   h1 i {
-    display: block;
-    margin-bottom: 8px;
+    margin-right: 4px;
+  }
+
+  .app-header {
+    margin-bottom: 14px;
   }
 
   /* Hide table on mobile */
@@ -1966,9 +1969,9 @@ input::placeholder {
 .app-tagline {
   text-align: center;
   color: var(--color-text-secondary-alt);
-  max-width: 640px;
-  margin: -20px auto 28px;
-  font-size: 15px;
+  max-width: 520px;
+  margin: 0 auto 16px;
+  font-size: 14px;
   line-height: 1.5;
 }
 
@@ -1987,8 +1990,8 @@ input::placeholder {
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin-bottom: 28px;
+  gap: 10px;
+  margin-bottom: 8px;
 }
 
 .mode-toggle {
@@ -2020,18 +2023,35 @@ input::placeholder {
   box-shadow: 0 4px 12px rgba(22, 163, 74, 0.35);
 }
 
+/* Deliberately quieter than the mode toggle — installing the app is a
+   nice-to-have, not the primary task on first visit. */
 .install-app-btn {
-  border: none;
-  background: linear-gradient(135deg, var(--color-accent-dark) 0%, var(--color-accent) 100%);
-  color: var(--color-bg);
-  padding: 10px 18px;
+  border: 1px solid var(--color-border-alt);
+  background: transparent;
+  color: var(--color-text-secondary);
+  padding: 8px 14px;
   border-radius: 999px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.install-app-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent-dark);
+  background: var(--color-green-bg);
+}
+
+/* A bolder variant used to (re-)promote installing after a result is
+   ready, where it earns more visual weight. */
+.install-app-btn.install-app-btn--promoted {
+  border: none;
+  background: linear-gradient(135deg, var(--color-accent-dark) 0%, var(--color-accent) 100%);
+  color: var(--color-bg);
   box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
 }
 
@@ -2533,10 +2553,34 @@ input::placeholder {
   .mode-toggle-bar,
   .wizard-progress,
   .wizard-actions,
+  .install-promo,
   .app-footer,
   .skip-link {
     display: none !important;
   }
+}
+
+/* --- Post-results install promotion + primary CTA emphasis --- */
+.install-promo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--color-green-bg);
+  border: 1px solid var(--color-green-border);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  margin-top: 16px;
+  color: var(--color-green-text);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.btn-cta {
+  font-size: 17px;
+  padding: 18px 32px;
 }
 
 /* --- Usage chip time hints, appliance field hints, disclaimer --- */
@@ -2580,4 +2624,48 @@ input::placeholder {
 .estimate-disclaimer i {
   color: var(--color-info);
   margin-top: 2px;
+}
+
+/* --- Advanced Mode caption + empty state --- */
+.advanced-mode-caption {
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  color: var(--color-text-secondary);
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.advanced-mode-caption i {
+  color: var(--color-primary);
+  margin-right: 6px;
+}
+
+.advanced-mode-caption strong {
+  color: var(--color-text-primary);
+}
+
+.advanced-empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  border: 2px dashed var(--color-border-alt);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-soft);
+  margin-bottom: 24px;
+}
+
+.advanced-empty-state i {
+  font-size: 32px;
+  color: var(--color-text-muted);
+  margin-bottom: 12px;
+  display: block;
+}
+
+.advanced-empty-state p {
+  color: var(--color-text-secondary);
+  font-size: 15px;
+  margin-bottom: 18px;
+  font-weight: 600;
 }

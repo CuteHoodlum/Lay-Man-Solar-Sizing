@@ -789,6 +789,32 @@ function calculateRow(row) {
 }
 
 // ===================
+// EMPTY STATE (Advanced Mode)
+// ===================
+// The table always contains one pristine template row in the markup
+// (addmore() clones it), but showing that empty row on first load reads
+// as an already-created, half-filled appliance. So Advanced Mode starts
+// on a plain "No appliances added yet" empty state instead, and reveals
+// the existing table only once the user takes the first "Add Appliance"
+// action — nothing about the underlying row/clone logic changes.
+let advancedTableRevealed = false;
+
+function handleAddApplianceClick() {
+  const wrapper = document.getElementById("advanced-table-wrapper");
+  const emptyState = document.getElementById("advanced-empty-state");
+
+  if (!advancedTableRevealed) {
+    advancedTableRevealed = true;
+    if (wrapper) wrapper.style.display = "";
+    if (emptyState) emptyState.style.display = "none";
+    syncTableToCards();
+    return;
+  }
+
+  addmore();
+}
+
+// ===================
 // ADD / REMOVE ROWS
 // ===================
 function addmore() {
