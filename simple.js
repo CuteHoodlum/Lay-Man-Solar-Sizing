@@ -12,13 +12,13 @@ const STORAGE_KEY = "solarCalc.state.v1";
 const SIMPLE_HP_TO_W = 746;
 
 const SCENARIOS = [
-  { id: "small-home", label: "Small Home", icon: "fa-house", desc: "1–2 bedroom home or apartment", autonomyDays: 1, systemVoltage: 24 },
-  { id: "medium-home", label: "Medium / Large Home", icon: "fa-house-chimney", desc: "3+ bedroom family home", autonomyDays: 1, systemVoltage: 48 },
-  { id: "office", label: "Office", icon: "fa-building", desc: "Small office or workspace", autonomyDays: 1, systemVoltage: 48 },
-  { id: "shop", label: "Shop / Business", icon: "fa-store", desc: "Retail shop or small business", autonomyDays: 1, systemVoltage: 48 },
-  { id: "backup", label: "Backup-Only", icon: "fa-battery-half", desc: "Stay on the grid — solar just kicks in during outages", autonomyDays: 1, systemVoltage: 48 },
-  { id: "off-grid", label: "Off-Grid", icon: "fa-mountain-sun", desc: "No utility connection — solar is your only power", autonomyDays: 2, systemVoltage: 48 },
-  { id: "hybrid", label: "Hybrid (Grid + Solar)", icon: "fa-plug-circle-bolt", desc: "Stay connected to the grid, use solar to cut bills and add backup", autonomyDays: 1, systemVoltage: 48 },
+  { id: "small-home", label: "Home", icon: "fa-house", desc: "Power your everyday household appliances and lighting.", autonomyDays: 1, systemVoltage: 24 },
+  { id: "medium-home", label: "Large Home", icon: "fa-house-chimney", desc: "Cover a bigger home with multiple rooms and appliances.", autonomyDays: 1, systemVoltage: 48 },
+  { id: "office", label: "Office", icon: "fa-building", desc: "Keep computers, lighting, and office equipment running.", autonomyDays: 1, systemVoltage: 48 },
+  { id: "shop", label: "Shop / Business", icon: "fa-store", desc: "Power retail equipment, lighting, and point-of-sale systems.", autonomyDays: 1, systemVoltage: 48 },
+  { id: "backup", label: "Backup Power", icon: "fa-battery-half", desc: "Stay powered during outages while staying grid-connected.", autonomyDays: 1, systemVoltage: 48 },
+  { id: "off-grid", label: "Off-Grid", icon: "fa-mountain-sun", desc: "Run entirely on solar — no utility connection at all.", autonomyDays: 2, systemVoltage: 48 },
+  { id: "hybrid", label: "Hybrid Solar", icon: "fa-plug-circle-bolt", desc: "Use solar to cut your bill while staying connected to the grid.", autonomyDays: 1, systemVoltage: 48 },
 ];
 
 const REGIONS = [
@@ -45,11 +45,11 @@ const REGIONS = [
 ];
 
 const USAGE_PRESETS = {
-  fewminutes: { label: "A few minutes", timeRange: "~30 min/day", hours: 0.5, dayHours: 0.4, nightHours: 0.1 },
-  morning: { label: "Morning", timeRange: "~6am–9am", hours: 3, dayHours: 3, nightHours: 0 },
-  afternoon: { label: "Afternoon", timeRange: "~12pm–4pm", hours: 4, dayHours: 4, nightHours: 0 },
-  evening: { label: "Evening / Night", timeRange: "~6pm–10pm", hours: 4, dayHours: 0, nightHours: 4 },
-  allday: { label: "All day", timeRange: "runs continuously, 24h", hours: 24, dayHours: 12, nightHours: 12 },
+  fewminutes: { label: "A few minutes", timeRange: "~30 minutes/day", hours: 0.5, dayHours: 0.4, nightHours: 0.1 },
+  morning: { label: "Morning", timeRange: "6:00 AM – 9:00 AM", hours: 3, dayHours: 3, nightHours: 0 },
+  afternoon: { label: "Afternoon", timeRange: "12:00 PM – 4:00 PM", hours: 4, dayHours: 4, nightHours: 0 },
+  evening: { label: "Evening / Night", timeRange: "6:00 PM – 10:00 PM", hours: 4, dayHours: 0, nightHours: 4 },
+  allday: { label: "All day", timeRange: "Runs continuously, 24 hours", hours: 24, dayHours: 12, nightHours: 12 },
 };
 
 const APPLIANCE_PRESETS = [
@@ -271,11 +271,11 @@ function qtyWarning(qty) {
 // ===================
 const STEP_ORDER = ["scenario", "location", "appliances", "usage", "results"];
 const STEP_LABELS = {
-  scenario: "What are you sizing for?",
+  scenario: "What are you sizing solar for?",
   location: "Where are you located?",
   appliances: "What do you want to run?",
   usage: "How often do you use them?",
-  results: "Your recommended system",
+  results: "Your Recommended Solar System",
 };
 
 function stepIndex(step) {
@@ -342,7 +342,7 @@ function renderSimpleMode() {
 
 function renderScenarioStep(body) {
   body.innerHTML = `
-    <p class="wizard-subtext">Pick the option that best matches your situation. You can change this later.</p>
+    <p class="wizard-subtext">Choose the option that best matches how you plan to use solar power. You can change this later.</p>
     <div class="scenario-grid">
       ${SCENARIOS.map(
         (s) => `
@@ -628,8 +628,9 @@ function renderUsageStep(body) {
 
     <div class="wizard-actions">
       <button type="button" class="btn btn-secondary" id="usage-back"><i class="fas fa-arrow-left"></i> Back</button>
-      <button type="button" class="btn btn-success" id="usage-calculate">
+      <button type="button" class="btn btn-success btn-cta" id="usage-calculate">
         <i class="fas fa-calculator"></i> Calculate My Solar System
+        <i class="fas fa-arrow-right" aria-hidden="true"></i>
       </button>
     </div>
   `;
@@ -756,13 +757,52 @@ function renderResultsStep(body) {
 
     <div class="wizard-actions results-actions">
       <button type="button" class="btn btn-secondary" id="results-edit"><i class="fas fa-arrow-left"></i> Edit Inputs</button>
-      <button type="button" class="btn btn-secondary" id="results-print"><i class="fas fa-print"></i> Print / Save Summary</button>
-      <button type="button" class="btn btn-primary" id="results-restart"><i class="fas fa-rotate"></i> Start Over</button>
+      <button type="button" class="btn btn-secondary" id="results-print"><i class="fas fa-print"></i> Print / Save PDF</button>
+      <button type="button" class="btn btn-secondary" id="results-share"><i class="fas fa-share-nodes"></i> Share</button>
+      <button type="button" class="btn btn-primary" id="results-restart"><i class="fas fa-rotate"></i> Start Again</button>
+    </div>
+
+    <div class="install-promo" id="install-promo" hidden>
+      <i class="fas fa-mobile-screen-button"></i>
+      <span>Want to keep this calculator on your phone?</span>
+      <button type="button" class="install-app-btn install-app-btn--promoted" onclick="handleInstallClick()">
+        <i class="fas fa-download"></i> Install the App
+      </button>
     </div>
   `;
 
+  const installBtnTopBar = document.getElementById("install-app-btn");
+  const installPromo = document.getElementById("install-promo");
+  if (installPromo && installBtnTopBar && !installBtnTopBar.hidden) {
+    installPromo.hidden = false;
+  }
+
   document.getElementById("results-edit").addEventListener("click", () => goToStep("usage"));
   document.getElementById("results-print").addEventListener("click", () => window.print());
+  document.getElementById("results-share").addEventListener("click", async () => {
+    const shareText =
+      `My recommended solar system: ${r.panelCount} x ${r.panelWattage}W panels, ` +
+      `${fmt(r.batteryKWh, 1)} kWh battery, ${fmt(r.inverterKVA, 1)} kW inverter ` +
+      `(${fmt(r.dailyKWh, 2)} kWh/day usage). Estimated with the Solar Sizing Calculator.`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "My Recommended Solar System", text: shareText });
+      } catch (e) {
+        /* user cancelled the share sheet — nothing to do */
+      }
+      return;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(shareText);
+        alert("Summary copied to clipboard — paste it wherever you'd like to share it.");
+        return;
+      } catch (e) {
+        /* clipboard blocked — fall through to the print fallback */
+      }
+    }
+    window.print();
+  });
   document.getElementById("results-restart").addEventListener("click", () => {
     if (!confirm("Start a new calculation? This will clear your current appliances.")) return;
     simpleState = defaultState();
