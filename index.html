@@ -50,8 +50,8 @@
     <a class="skip-link" href="#main-content">Skip to calculator</a>
 
     <div id="offline-banner" class="offline-banner" role="status" aria-live="polite" hidden>
-      <i class="fas fa-plug-circle-xmark" aria-hidden="true"></i>
-      <span>You're offline. The calculator still works — your data stays on this device.</span>
+      <i class="fas fa-bolt" aria-hidden="true"></i>
+      <span>Offline — the calculator still works.</span>
     </div>
     <main id="audit-container">
       <header class="app-header">
@@ -117,6 +117,7 @@
       <div id="advanced-empty-state" class="advanced-empty-state">
         <i class="fas fa-clipboard-list"></i>
         <p>No appliances added yet</p>
+        <p class="advanced-empty-state-hint">Add appliances to build your load profile.</p>
         <button type="button" class="btn btn-primary" onclick="handleAddApplianceClick()">
           <i class="fas fa-plus"></i> Add Appliance
         </button>
@@ -366,32 +367,43 @@
         </button>
       </div>
 
-      <!-- Inverter / Battery / Panel actions -->
-      <div class="action-buttons button-group" style="margin-top: 12px">
-        <button
-          class="btn btn-secondary"
-          onclick="addInverterSizing()"
-          id="add-inverter"
-        >
-          <i class="fas fa-microchip"></i>
-          Add Inverter Sizing
-        </button>
-        <button
-          class="btn btn-secondary"
-          onclick="addBatterySizing()"
-          id="add-battery"
-        >
-          <i class="fas fa-battery-half"></i>
-          Add Battery Sizing
-        </button>
-        <button
-          class="btn btn-secondary"
-          onclick="addPanelSizing()"
-          id="add-panel"
-        >
-          <i class="fas fa-solar-panel"></i>
-          Add Panel Sizing
-        </button>
+      <!-- Inverter / Battery / Panel actions — deliberately secondary to
+           "Calculate System" above. app.js moves this whole .action-buttons
+           block around the DOM (see moveActionButtonsBelow /
+           moveActionButtonsToOriginalPosition), so the heading and
+           subtitle live INSIDE it rather than as separate wrapper
+           elements, to avoid leaving them behind when it moves. -->
+      <div class="action-buttons button-group advanced-tools-card" style="margin-top: 20px">
+        <div class="advanced-tools-header">
+          <h3>Advanced Sizing Tools</h3>
+          <p>Optional manual sizing tools for installers.</p>
+        </div>
+        <div class="advanced-tools-buttons">
+          <button
+            class="btn btn-outline"
+            onclick="addInverterSizing()"
+            id="add-inverter"
+          >
+            <i class="fas fa-microchip"></i>
+            Add Inverter Sizing
+          </button>
+          <button
+            class="btn btn-outline"
+            onclick="addBatterySizing()"
+            id="add-battery"
+          >
+            <i class="fas fa-battery-half"></i>
+            Add Battery Sizing
+          </button>
+          <button
+            class="btn btn-outline"
+            onclick="addPanelSizing()"
+            id="add-panel"
+          >
+            <i class="fas fa-solar-panel"></i>
+            Add Panel Sizing
+          </button>
+        </div>
       </div>
 
       <!-- LOAD SUMMARY -->
@@ -493,6 +505,12 @@
       <!-- /#advanced-mode -->
     </main>
 
+    <!-- Single, synchronous, deterministic owner of the Simple/Advanced
+         mode decision. Runs immediately (not on DOMContentLoaded) since
+         #simple-mode / #advanced-mode / the mode buttons already exist
+         above by the time the parser reaches this line — see mode.js. -->
+    <script src="mode.js"></script>
+
     <footer class="app-footer">
       <p>
         Estimates only — always have a qualified installer verify your final
@@ -504,96 +522,6 @@
     <script src="inverter-data.js"></script>
     <script src="app.js"></script>
     <script src="simple.js"></script>
-    <script>
-      // PWA: service worker registration + install prompt + offline status
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker.register("service-worker.js").catch(() => {});
-        });
-      }
-
-      let deferredInstallPrompt = null;
-      window.addEventListener("beforeinstallprompt", (e) => {
-        e.preventDefault();
-        deferredInstallPrompt = e;
-        const btn = document.getElementById("install-app-btn");
-        if (btn) btn.hidden = false;
-      });
-
-      window.addEventListener("appinstalled", () => {
-        deferredInstallPrompt = null;
-        const btn = document.getElementById("install-app-btn");
-        if (btn) btn.hidden = true;
-      });
-
-      function isIos() {
-        return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
-      }
-
-      function isStandalone() {
-        return (
-          window.matchMedia("(display-mode: standalone)").matches ||
-          window.navigator.standalone === true
-        );
-      }
-
-      async function handleInstallClick() {
-        if (deferredInstallPrompt) {
-          deferredInstallPrompt.prompt();
-          await deferredInstallPrompt.userChoice;
-          deferredInstallPrompt = null;
-          document.getElementById("install-app-btn").hidden = true;
-          return;
-        }
-        if (isIos()) {
-          alert(
-            "To install: tap the Share icon in Safari, then choose \"Add to Home Screen.\""
-          );
-        }
-      }
-
-      document.addEventListener("DOMContentLoaded", () => {
-        if (isIos() && !isStandalone()) {
-          const btn = document.getElementById("install-app-btn");
-          if (btn) btn.hidden = false;
-        }
-      });
-
-      function updateOfflineBanner() {
-        const banner = document.getElementById("offline-banner");
-        if (!banner) return;
-        banner.hidden = navigator.onLine;
-      }
-      window.addEventListener("online", updateOfflineBanner);
-      window.addEventListener("offline", updateOfflineBanner);
-      document.addEventListener("DOMContentLoaded", updateOfflineBanner);
-
-      function setAppMode(mode) {
-        const simple = document.getElementById("simple-mode");
-        const advanced = document.getElementById("advanced-mode");
-        const simpleBtn = document.getElementById("mode-simple-btn");
-        const advancedBtn = document.getElementById("mode-advanced-btn");
-        const isSimple = mode === "simple";
-
-        simple.hidden = !isSimple;
-        advanced.hidden = isSimple;
-        simpleBtn.classList.toggle("active", isSimple);
-        advancedBtn.classList.toggle("active", !isSimple);
-        simpleBtn.setAttribute("aria-selected", String(isSimple));
-        advancedBtn.setAttribute("aria-selected", String(!isSimple));
-
-        try {
-          localStorage.setItem("solarCalc.mode.v1", mode);
-        } catch (e) {}
-      }
-
-      document.addEventListener("DOMContentLoaded", () => {
-        let savedMode = "simple";
-        try {
-          savedMode = localStorage.getItem("solarCalc.mode.v1") || "simple";
-        } catch (e) {}
-        setAppMode(savedMode);
-      });
-    </script>
+    <script src="pwa.js"></script>
   </body>
 </html>
