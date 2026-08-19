@@ -1643,6 +1643,17 @@ function removeBatterySection(button) {
 }
 
 
+// NOTE on Simple vs Advanced Mode battery sizing (documented, not a bug):
+// Advanced Mode sizes the battery as nightWh * days / DoD * 1.1 safety
+// margin, and does NOT divide by inverter efficiency here (efficiency is
+// instead applied earlier, to the inverter's own energy-demand figures).
+// Simple Mode (simple.js -> computeSystem) uses the more conservative
+// Battery_Wh = (Night_Wh * autonomy_days) / (DoD * inverter_efficiency),
+// so a Simple Mode battery recommendation will run slightly larger than
+// Advanced Mode's for the same load. Both are internally consistent;
+// this divergence is intentional (Simple Mode is deliberately generous)
+// and left in place per the "don't touch Advanced Mode unless necessary"
+// constraint on this pass.
 function calculateBattery() {
   let nightWh = nightEnergyWh;
 
