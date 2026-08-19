@@ -2,8 +2,31 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Solar Correction</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Solar Sizing Calculator — Panel, Battery &amp; Inverter Size Estimator</title>
+    <meta
+      name="description"
+      content="Free solar sizing calculator. Answer a few simple questions about your appliances and location to get a recommended solar panel, battery, and inverter size for your home, office, shop, or off-grid system — no solar knowledge required."
+    />
+    <meta name="keywords" content="solar sizing calculator, solar panel calculator, solar battery calculator, battery sizing calculator, solar inverter calculator, off-grid solar calculator" />
+    <link rel="canonical" href="https://example.com/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Solar Sizing Calculator — Panel, Battery & Inverter Size Estimator" />
+    <meta property="og:description" content="Answer a few simple questions and get a recommended solar panel, battery, and inverter size for your home, office, shop, or off-grid system." />
+    <meta property="og:image" content="icons/icon-512.png" />
+    <meta name="twitter:card" content="summary" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#0f593d" />
+    <link rel="icon" href="icons/icon-192.png" type="image/png" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Solar Sizing" />
+    <meta name="mobile-web-app-capable" content="yes" />
 
     <!-- Font Awesome -->
     <link
@@ -15,8 +38,65 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div id="audit-container">
+    <a class="skip-link" href="#main-content">Skip to calculator</a>
+
+    <div id="offline-banner" class="offline-banner" role="status" aria-live="polite" hidden>
+      <i class="fas fa-plug-circle-xmark" aria-hidden="true"></i>
+      <span>You're offline. The calculator still works — your data stays on this device.</span>
+    </div>
+    <main id="audit-container">
       <h1><i class="fas fa-solar-panel"></i> Solar System Sizing Calculator</h1>
+      <p class="app-tagline">
+        Answer a few simple questions about your location and appliances to
+        get a recommended solar panel, battery, and inverter size — free,
+        installable, and works offline.
+      </p>
+
+      <div class="mode-toggle-bar">
+        <div class="mode-toggle" role="tablist" aria-label="Calculator mode">
+          <button
+            type="button"
+            id="mode-simple-btn"
+            class="mode-toggle-btn active"
+            role="tab"
+            aria-selected="true"
+            aria-controls="simple-mode"
+            onclick="setAppMode('simple')"
+          >
+            <i class="fas fa-wand-magic-sparkles"></i> Simple Mode
+          </button>
+          <button
+            type="button"
+            id="mode-advanced-btn"
+            class="mode-toggle-btn"
+            role="tab"
+            aria-selected="false"
+            aria-controls="advanced-mode"
+            onclick="setAppMode('advanced')"
+          >
+            <i class="fas fa-sliders-h"></i> Advanced / Installer Mode
+          </button>
+        </div>
+        <button
+          type="button"
+          id="install-app-btn"
+          class="install-app-btn"
+          hidden
+          onclick="handleInstallClick()"
+        >
+          <i class="fas fa-download"></i> Install App
+        </button>
+      </div>
+
+      <!-- ============================================
+           SIMPLE MODE — guided wizard for non-technical users
+           ============================================ -->
+      <section id="simple-mode" aria-label="Simple solar sizing wizard"></section>
+
+      <!-- ============================================
+           ADVANCED / INSTALLER MODE — existing detailed calculator
+           ============================================ -->
+      <div id="advanced-mode" hidden>
 
       <!-- DESKTOP TABLE VIEW -->
       <div class="table-container">
@@ -369,10 +449,111 @@
       <div id="inverter-container"></div>
       <div id="battery-container"></div>
       <div id="panel-container"></div>
-    </div>
+      </div>
+      <!-- /#advanced-mode -->
+    </main>
+
+    <footer class="app-footer">
+      <p>
+        Estimates only — always have a qualified installer verify your final
+        system design. Your inputs are stored only on this device.
+      </p>
+    </footer>
 
     <!-- Data + App -->
     <script src="inverter-data.js"></script>
     <script src="app.js"></script>
+    <script src="simple.js"></script>
+    <script>
+      // PWA: service worker registration + install prompt + offline status
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("service-worker.js").catch(() => {});
+        });
+      }
+
+      let deferredInstallPrompt = null;
+      window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        const btn = document.getElementById("install-app-btn");
+        if (btn) btn.hidden = false;
+      });
+
+      window.addEventListener("appinstalled", () => {
+        deferredInstallPrompt = null;
+        const btn = document.getElementById("install-app-btn");
+        if (btn) btn.hidden = true;
+      });
+
+      function isIos() {
+        return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+      }
+
+      function isStandalone() {
+        return (
+          window.matchMedia("(display-mode: standalone)").matches ||
+          window.navigator.standalone === true
+        );
+      }
+
+      async function handleInstallClick() {
+        if (deferredInstallPrompt) {
+          deferredInstallPrompt.prompt();
+          await deferredInstallPrompt.userChoice;
+          deferredInstallPrompt = null;
+          document.getElementById("install-app-btn").hidden = true;
+          return;
+        }
+        if (isIos()) {
+          alert(
+            "To install: tap the Share icon in Safari, then choose \"Add to Home Screen.\""
+          );
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        if (isIos() && !isStandalone()) {
+          const btn = document.getElementById("install-app-btn");
+          if (btn) btn.hidden = false;
+        }
+      });
+
+      function updateOfflineBanner() {
+        const banner = document.getElementById("offline-banner");
+        if (!banner) return;
+        banner.hidden = navigator.onLine;
+      }
+      window.addEventListener("online", updateOfflineBanner);
+      window.addEventListener("offline", updateOfflineBanner);
+      document.addEventListener("DOMContentLoaded", updateOfflineBanner);
+
+      function setAppMode(mode) {
+        const simple = document.getElementById("simple-mode");
+        const advanced = document.getElementById("advanced-mode");
+        const simpleBtn = document.getElementById("mode-simple-btn");
+        const advancedBtn = document.getElementById("mode-advanced-btn");
+        const isSimple = mode === "simple";
+
+        simple.hidden = !isSimple;
+        advanced.hidden = isSimple;
+        simpleBtn.classList.toggle("active", isSimple);
+        advancedBtn.classList.toggle("active", !isSimple);
+        simpleBtn.setAttribute("aria-selected", String(isSimple));
+        advancedBtn.setAttribute("aria-selected", String(!isSimple));
+
+        try {
+          localStorage.setItem("solarCalc.mode.v1", mode);
+        } catch (e) {}
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        let savedMode = "simple";
+        try {
+          savedMode = localStorage.getItem("solarCalc.mode.v1") || "simple";
+        } catch (e) {}
+        setAppMode(savedMode);
+      });
+    </script>
   </body>
 </html>
