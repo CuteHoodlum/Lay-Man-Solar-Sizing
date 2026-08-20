@@ -114,13 +114,15 @@
         exact usage times, and inverter database search).
       </p>
 
+      <!-- Deliberately no Add Appliance button in here — the primary
+           "+ Add Appliance" button below (which reveals this same table on
+           first click, via handleAddApplianceClick()) is the single action
+           for this flow. Two Add Appliance buttons visible at once read as
+           repetitive. -->
       <div id="advanced-empty-state" class="advanced-empty-state">
         <i class="fas fa-clipboard-list"></i>
         <p>No appliances added yet</p>
         <p class="advanced-empty-state-hint">Add appliances to build your load profile.</p>
-        <button type="button" class="btn btn-primary" onclick="handleAddApplianceClick()">
-          <i class="fas fa-plus"></i> Add Appliance
-        </button>
       </div>
 
       <div id="advanced-table-wrapper" style="display: none">
