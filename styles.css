@@ -2742,8 +2742,16 @@ label.time-field {
 }
 
 .advanced-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  padding: 48px 24px;
+  /* Shorter now that the panel holds only an icon and two lines of text
+     (the Add Appliance action lives once, below, not duplicated in here) —
+     36px keeps the panel from reading as an oversized empty box while
+     still giving the dashed border room to breathe. */
+  padding: 36px 24px;
   border: 2px dashed var(--color-border-alt);
   border-radius: var(--radius-lg);
   background: var(--color-bg-soft);
@@ -2760,8 +2768,11 @@ label.time-field {
 .advanced-empty-state p {
   color: var(--color-text-secondary);
   font-size: 15px;
-  margin-bottom: 18px;
   font-weight: 600;
+}
+
+.advanced-empty-state p:last-child {
+  margin-bottom: 0;
 }
 
 /* --- Advanced Sizing Tools (secondary, de-emphasized legacy controls) --- */
@@ -2813,11 +2824,15 @@ label.time-field {
   background: var(--color-green-bg);
 }
 
+/* The -10px margin this used to carry compensated for the removed
+   "No appliances added yet" line's trailing margin-bottom stacking with a
+   button that no longer exists in this panel — a small positive gap reads
+   better now that the hint is the panel's last line. */
 .advanced-empty-state-hint {
   color: var(--color-text-secondary) !important;
   font-size: 13.5px !important;
   font-weight: 400 !important;
-  margin-top: -10px !important;
+  margin-top: 6px !important;
 }
 
 /* ============================================
