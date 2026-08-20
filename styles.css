@@ -1747,20 +1747,114 @@ input::placeholder {
   text-align: left;
 }
 
+/* ============================================
+   TIME SLOT COMPONENT
+   ============================================
+   Each slot is a self-contained card: a numbered header with its own
+   remove control, a labelled Start -> End pair, and that slot's own
+   duration. Previously all of these controls sat on one flex line with no
+   grouping, so it was not obvious which start belonged to which end. */
+
 .time-block {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  text-align: left;
+}
+
+.time-slot-header {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 6px;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.time-slot-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+/* A single slot needs no numbering — the label only earns its keep once
+   there is more than one slot to tell apart. */
+.multi-time-blocks:not(.has-multiple-slots) .time-slot-label,
+.mobile-time-blocks:not(.has-multiple-slots) .time-slot-label {
+  display: none;
+}
+
+.multi-time-blocks:not(.has-multiple-slots) .time-slot-header,
+.mobile-time-blocks:not(.has-multiple-slots) .time-slot-header {
+  display: none;
+}
+
+.time-slot-fields {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+/* Selector is `label.time-field` rather than `.time-field` so it outranks
+   the generic `.card-field label` rule inside the mobile cards, which
+   otherwise re-centred these fields and forced their labels to uppercase
+   (making the card view disagree with the table view). */
+label.time-field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 112px;
+  margin-bottom: 0;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.time-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.time-slot-arrow {
+  flex: 0 0 auto;
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 15px;
+  /* Sits on the input row, not the label row. */
+  padding-bottom: 9px;
+}
+
+.time-slot-duration {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.time-slot-duration .slot-duration {
+  color: var(--color-green-text);
+  font-weight: 700;
+}
+
+/* With only one slot its duration is by definition the day total, so
+   showing both would just be the same number twice. */
+.multi-time-blocks:not(.has-multiple-slots) .time-slot-duration,
+.mobile-time-blocks:not(.has-multiple-slots) .time-slot-duration {
+  display: none;
 }
 
 .time-block input[type="time"] {
-  /* 100px clipped the meridiem off "06:00 PM" in the card layout. 112px
-     fits the full value plus the clock affordance, and still lets two
-     inputs sit side by side inside a 320px-wide phone card. */
-  width: 112px;
-  padding: 6px 10px;
+  /* Fills its .time-field column instead of a fixed pixel width; the floor
+     keeps the meridiem from being clipped off "06:00 PM", which a bare
+     100px used to do. */
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
   border: 1px solid var(--color-border-strong);
   border-radius: 6px;
   font-size: 0.9em;
@@ -1833,11 +1927,20 @@ input::placeholder {
   .hours-cell {
     min-width: 0;
   }
-  .time-block {
-    justify-content: flex-start;
+  /* Stack Start above End on narrow phones rather than squeezing both
+     onto one line with the arrow between them. */
+  .time-slot-fields {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
   }
-  .time-block input[type="time"] {
-    width: 90px;
+  .time-slot-arrow {
+    transform: rotate(90deg);
+    align-self: center;
+    padding-bottom: 0;
+  }
+  label.time-field {
+    min-width: 0;
   }
 }
 
@@ -1907,29 +2010,10 @@ input::placeholder {
   margin-top: 4px;
 }
 
-/* === FIX: Keep × button always on the same line (desktop + mobile) === */
-.time-block {
-  display: flex !important;
-  flex-wrap: nowrap !important; /* ← this is the hero */
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.time-block .remove-block {
-  flex-shrink: 0; /* never shrink */
-  margin-left: auto; /* push to the right */
-  order: 999; /* always last */
-}
-
-/* Mobile cards – same fix */
-.mobile-time-blocks .time-block {
-  flex-wrap: nowrap !important;
-  justify-content: space-between;
-}
-.mobile-time-blocks .remove-block {
-  margin-left: auto;
-}
+/* The previous `display: flex !important` overrides here forced every
+   control onto one nowrap line. That is exactly the compressed layout the
+   slot-card structure above replaces, so they are gone; the remove control
+   is now positioned by .time-slot-header instead. */
 
 /* ============================================
    SIMPLE MODE WIZARD + PWA UI

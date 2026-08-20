@@ -277,28 +277,46 @@
 
               <!-- Hours -->
               <td class="hours-cell">
+                <!-- This markup must stay identical to what
+                     timeSlotsContainerMarkup() / timeSlotInnerMarkup() in
+                     app.js produce, since slots added at runtime come from
+                     there. Change both together. -->
                 <div class="multi-time-blocks">
-                  <!-- First block (always visible) -->
                   <div class="time-block">
-                    <input type="time" class="start-time" value="18:00" />
-                    <span>–</span>
-                    <input type="time" class="end-time" value="22:00" />
-                    <button
-                      type="button"
-                      class="remove-block"
-                      style="display: none"
-                    >
-                      ×
-                    </button>
+                    <div class="time-slot-header">
+                      <span class="time-slot-label">Time Slot 1</span>
+                      <button
+                        type="button"
+                        class="remove-block"
+                        aria-label="Remove this time slot"
+                        title="Remove this time slot"
+                        style="display: none"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                    <div class="time-slot-fields">
+                      <label class="time-field">
+                        <span class="time-field-label">Start Time</span>
+                        <input type="time" class="start-time" value="18:00" />
+                      </label>
+                      <span class="time-slot-arrow" aria-hidden="true">&rarr;</span>
+                      <label class="time-field">
+                        <span class="time-field-label">End Time</span>
+                        <input type="time" class="end-time" value="22:00" />
+                      </label>
+                    </div>
+                    <p class="time-slot-duration">
+                      Duration: <strong class="slot-duration">4.0 hours</strong>
+                    </p>
                   </div>
 
-                  <!-- Add more button -->
                   <button type="button" class="add-block-btn">
-                    <i class="fas fa-plus"></i> Add time slot
+                    <i class="fas fa-plus"></i> Add Time Slot
                   </button>
 
-                  <!-- Total calculated hours -->
                   <div class="total-hours-display">
+                    <span class="total-hours-label">Total</span>
                     <strong><span class="total-h">4.0</span> hours/day</strong>
                     <input type="hidden" class="hours" value="4.0" />
                   </div>

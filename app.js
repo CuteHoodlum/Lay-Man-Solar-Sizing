@@ -282,6 +282,136 @@ function updateActionButtonsVisibility() {
 }
 
 // ===================
+// TIME SLOT COMPONENT (shared by the desktop table and the mobile cards)
+// ===================
+// Six different places used to emit their own copy of the time-slot
+// markup, which is how the controls drifted out of sync (a slot added via
+// "Add Time Slot" looked different from the one rendered on load).
+// Everything now builds from these helpers, so there is one structure.
+
+const TIME_SLOT_DEFAULT_START = "18:00";
+const TIME_SLOT_DEFAULT_END = "22:00";
+
+// Duration of one slot in hours. Same arithmetic as before, including the
+// wrap past midnight when the end time is earlier than the start time.
+function slotDurationHours(start, end) {
+  if (!start || !end) return 0;
+  const [sh, sm] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  if (![sh, sm, eh, em].every(Number.isFinite)) return 0;
+  let s = sh + sm / 60;
+  let e = eh + em / 60;
+  if (e < s) e += 24;
+  const h = e - s;
+  return h > 0 ? h : 0;
+}
+
+function timeSlotInnerMarkup(start, end) {
+  return `
+    <div class="time-slot-header">
+      <span class="time-slot-label">Time Slot</span>
+      <button type="button" class="remove-block" aria-label="Remove this time slot" title="Remove this time slot">&times;</button>
+    </div>
+    <div class="time-slot-fields">
+      <label class="time-field">
+        <span class="time-field-label">Start Time</span>
+        <input type="time" class="start-time" value="${start}">
+      </label>
+      <span class="time-slot-arrow" aria-hidden="true">&rarr;</span>
+      <label class="time-field">
+        <span class="time-field-label">End Time</span>
+        <input type="time" class="end-time" value="${end}">
+      </label>
+    </div>
+    <p class="time-slot-duration">Duration: <strong class="slot-duration">0.0 hours</strong></p>
+  `;
+}
+
+function timeSlotMarkup(start, end) {
+  return `<div class="time-block">${timeSlotInnerMarkup(start, end)}</div>`;
+}
+
+function createTimeSlot(start, end) {
+  const block = document.createElement("div");
+  block.className = "time-block";
+  block.innerHTML = timeSlotInnerMarkup(start, end);
+  return block;
+}
+
+// Full inner HTML for a .multi-time-blocks / .mobile-time-blocks container.
+// `slots` is an array of [start, end] pairs.
+function timeSlotsContainerMarkup(slots, hours) {
+  const list =
+    slots && slots.length
+      ? slots
+      : [[TIME_SLOT_DEFAULT_START, TIME_SLOT_DEFAULT_END]];
+  const totalStr = hours || "0.0";
+  return `
+    ${list.map(([s, e]) => timeSlotMarkup(s, e)).join("")}
+    <button type="button" class="add-block-btn">
+      <i class="fas fa-plus"></i> Add Time Slot
+    </button>
+    <div class="total-hours-display">
+      <span class="total-hours-label">Total</span>
+      <strong><span class="total-h">${totalStr}</span> hours/day</strong>
+      <input type="hidden" class="hours" value="${totalStr}" />
+    </div>
+  `;
+}
+
+// Renumbers the slot labels, refreshes each slot's own duration readout,
+// hides the remove control when only one slot remains, and returns the
+// rounded total for the container.
+function refreshTimeSlots(container) {
+  const blocks = [...container.querySelectorAll(".time-block")];
+  let total = 0;
+
+  blocks.forEach((block, i) => {
+    const start = block.querySelector(".start-time")?.value;
+    const end = block.querySelector(".end-time")?.value;
+    const h = slotDurationHours(start, end);
+    total += h;
+
+    const label = block.querySelector(".time-slot-label");
+    if (label) label.textContent = `Time Slot ${i + 1}`;
+
+    const duration = block.querySelector(".slot-duration");
+    if (duration) duration.textContent = `${h.toFixed(1)} hours`;
+
+    // With a single slot the per-slot duration already is the total, and
+    // there is nothing meaningful to remove down to.
+    const removeBtn = block.querySelector(".remove-block");
+    if (removeBtn) removeBtn.style.display = blocks.length > 1 ? "" : "none";
+  });
+
+  container.classList.toggle("has-multiple-slots", blocks.length > 1);
+
+  return Math.round(total * 10) / 10;
+}
+
+// Wires change/click handling for a slot container using delegation, so
+// slots added later need no extra listener bookkeeping. Returns the
+// recalculate function so callers can trigger it after programmatic edits.
+function bindTimeSlotContainer(container, onRecalculate) {
+  container.addEventListener("change", (e) => {
+    if (e.target.matches(".start-time, .end-time")) onRecalculate();
+  });
+
+  container.addEventListener("click", (e) => {
+    const btn = e.target.closest(".remove-block");
+    if (!btn || !container.contains(btn)) return;
+    const block = btn.closest(".time-block");
+    if (!block) return;
+    // Never let the user delete their way down to zero slots.
+    if (container.querySelectorAll(".time-block").length <= 1) return;
+    block.remove();
+    onRecalculate();
+  });
+
+  container._recalc = onRecalculate;
+}
+
+// ===================
 // DESKTOP MULTI–TIME–BLOCKS
 // ===================
 function initMultiTimeBlocks(row) {
@@ -293,22 +423,7 @@ function initMultiTimeBlocks(row) {
   const hiddenHoursInput = container.querySelector(".hours");
 
   function calculateTotalHours() {
-    let total = 0;
-    container.querySelectorAll(".time-block").forEach((block) => {
-      const start = block.querySelector(".start-time")?.value;
-      const end = block.querySelector(".end-time")?.value;
-      if (!start || !end) return;
-
-      const [sh, sm] = start.split(":").map(Number);
-      const [eh, em] = end.split(":").map(Number);
-      let s = sh + sm / 60;
-      let e = eh + em / 60;
-      if (e < s) e += 24;
-      const h = e - s;
-      if (h > 0) total += h;
-    });
-
-    const rounded = Math.round(total * 10) / 10;
+    const rounded = refreshTimeSlots(container);
     if (totalDisplay) totalDisplay.textContent = rounded.toFixed(1);
     if (hiddenHoursInput) hiddenHoursInput.value = rounded.toFixed(1);
   }
@@ -316,42 +431,12 @@ function initMultiTimeBlocks(row) {
   const addBtn = container.querySelector(".add-block-btn");
   if (addBtn) {
     addBtn.addEventListener("click", () => {
-      const block = document.createElement("div");
-      block.className = "time-block";
-      block.innerHTML = `
-        <input type="time" class="start-time" value="08:00">
-        <span>–</span>
-        <input type="time" class="end-time" value="09:00">
-        <button type="button" class="remove-block">×</button>
-      `;
-      container.insertBefore(block, addBtn);
-
-      block
-        .querySelectorAll("input[type='time']")
-        .forEach((i) => i.addEventListener("change", calculateTotalHours));
-
-      block
-        .querySelector(".remove-block")
-        .addEventListener("click", () => {
-          block.remove();
-          calculateTotalHours();
-        });
-
+      container.insertBefore(createTimeSlot("08:00", "09:00"), addBtn);
       calculateTotalHours();
     });
   }
 
-  container.addEventListener("click", (e) => {
-    if (!e.target.classList.contains("remove-block")) return;
-    const block = e.target.closest(".time-block");
-    if (!block) return;
-    block.remove();
-    calculateTotalHours();
-  });
-
-  container
-    .querySelectorAll(".time-block input[type='time']")
-    .forEach((i) => i.addEventListener("change", calculateTotalHours));
+  bindTimeSlotContainer(container, calculateTotalHours);
 
   calculateTotalHours();
 }
@@ -392,18 +477,18 @@ function initAppliancePreset(row) {
     firstBlock.querySelector(".end-time").value = preset.blocks[0][1];
 
     for (let i = 1; i < preset.blocks.length; i++) {
-      const newBlock = document.createElement("div");
-      newBlock.className = "time-block";
-      newBlock.innerHTML = `
-        <input type="time" class="start-time" value="${preset.blocks[i][0]}">
-        <span>–</span>
-        <input type="time" class="end-time" value="${preset.blocks[i][1]}">
-        <button type="button" class="remove-block">×</button>
-      `;
-      container.insertBefore(newBlock, container.querySelector(".add-block-btn"));
+      container.insertBefore(
+        createTimeSlot(preset.blocks[i][0], preset.blocks[i][1]),
+        container.querySelector(".add-block-btn")
+      );
     }
 
+    // Applying a preset changes the times programmatically, which fires no
+    // change event. initMultiTimeBlocks() early-returns once a container is
+    // already bound, so previously the total silently kept the old value
+    // until the user happened to edit a time by hand. Recalculate directly.
     initMultiTimeBlocks(row);
+    if (typeof container._recalc === "function") container._recalc();
   });
 }
 
@@ -449,38 +534,14 @@ function createMobileCard(tableRow, index) {
       <option value="other">Other</option>
     `;
 
-  // Build time-slot markup from the desktop row's multi-time-blocks if present
-  let timeBlocksMarkup = "";
+  // Mirror whatever slots the desktop row currently holds.
   const mtb = tableRow.querySelector(".multi-time-blocks");
-  if (mtb) {
-    const blocks = mtb.querySelectorAll(".time-block");
-    if (blocks.length > 0) {
-      blocks.forEach((block, i) => {
-        const sVal = block.querySelector(".start-time")?.value || "18:00";
-        const eVal = block.querySelector(".end-time")?.value || "22:00";
-        const showRemove = i === 0 ? 'style="display:none;"' : "";
-        timeBlocksMarkup += `
-          <div class="time-block">
-            <input type="time" class="start-time" value="${sVal}">
-            <span>–</span>
-            <input type="time" class="end-time" value="${eVal}">
-            <button type="button" class="remove-block" ${showRemove}>×</button>
-          </div>
-        `;
-      });
-    }
-  }
-
-  if (!timeBlocksMarkup) {
-    timeBlocksMarkup = `
-      <div class="time-block">
-        <input type="time" class="start-time" value="18:00">
-        <span>–</span>
-        <input type="time" class="end-time" value="22:00">
-        <button type="button" class="remove-block" style="display:none;">×</button>
-      </div>
-    `;
-  }
+  const mirroredSlots = mtb
+    ? [...mtb.querySelectorAll(".time-block")].map((block) => [
+        block.querySelector(".start-time")?.value || TIME_SLOT_DEFAULT_START,
+        block.querySelector(".end-time")?.value || TIME_SLOT_DEFAULT_END,
+      ])
+    : [];
 
   card.innerHTML = `
     <div class="card-header">
@@ -527,14 +588,7 @@ function createMobileCard(tableRow, index) {
     <div class="card-field">
       <label><i class="fas fa-clock"></i> Usage Time (per day)</label>
       <div class="mobile-time-blocks">
-        ${timeBlocksMarkup}
-        <button type="button" class="add-block-btn">
-          <i class="fas fa-plus"></i> Add time slot
-        </button>
-        <div class="total-hours-display">
-          <strong><span class="total-h">${hours || "0.0"}</span> hours/day</strong>
-          <input type="hidden" class="hours" value="${hours || "0"}" />
-        </div>
+        ${timeSlotsContainerMarkup(mirroredSlots, hours)}
       </div>
     </div>
 
@@ -626,25 +680,7 @@ function initMobileTimeBlocks(card, tableRow) {
   const rowHoursInput = tableRow.querySelector(".hours");
 
   function calculateMobileHours() {
-    let total = 0;
-
-    container.querySelectorAll(".time-block").forEach((block) => {
-      const s = block.querySelector(".start-time")?.value;
-      const e = block.querySelector(".end-time")?.value;
-      if (!s || !e) return;
-
-      const [sh, sm] = s.split(":").map(Number);
-      const [eh, em] = e.split(":").map(Number);
-
-      let start = sh + sm / 60;
-      let end = eh + em / 60;
-      if (end < start) end += 24;
-
-      const h = end - start;
-      if (h > 0) total += h;
-    });
-
-    const rounded = Math.round(total * 10) / 10;
+    const rounded = refreshTimeSlots(container);
     const roundedStr = rounded.toFixed(1);
 
     if (totalDisplay) totalDisplay.textContent = roundedStr;
@@ -659,42 +695,12 @@ function initMobileTimeBlocks(card, tableRow) {
   const addBtn = container.querySelector(".add-block-btn");
   if (addBtn) {
     addBtn.addEventListener("click", () => {
-      const block = document.createElement("div");
-      block.className = "time-block";
-      block.innerHTML = `
-        <input type="time" class="start-time" value="08:00">
-        <span>–</span>
-        <input type="time" class="end-time" value="09:00">
-        <button type="button" class="remove-block">×</button>
-      `;
-      container.insertBefore(block, addBtn);
-
-      block
-        .querySelectorAll("input[type='time']")
-        .forEach((i) => i.addEventListener("change", calculateMobileHours));
-
-      block
-        .querySelector(".remove-block")
-        .addEventListener("click", () => {
-          block.remove();
-          calculateMobileHours();
-        });
-
+      container.insertBefore(createTimeSlot("08:00", "09:00"), addBtn);
       calculateMobileHours();
     });
   }
 
-  container.addEventListener("click", (e) => {
-    if (!e.target.classList.contains("remove-block")) return;
-    const block = e.target.closest(".time-block");
-    if (!block) return;
-    block.remove();
-    calculateMobileHours();
-  });
-
-  container
-    .querySelectorAll(".time-block input[type='time']")
-    .forEach((i) => i.addEventListener("change", calculateMobileHours));
+  bindTimeSlotContainer(container, calculateMobileHours);
 
   calculateMobileHours();
 }
@@ -847,21 +853,7 @@ function addmore() {
 
   const timeContainer = row.querySelector(".multi-time-blocks");
   if (timeContainer) {
-    timeContainer.innerHTML = `
-      <div class="time-block">
-        <input type="time" class="start-time" value="18:00">
-        <span>–</span>
-        <input type="time" class="end-time" value="22:00">
-        <button type="button" class="remove-block" style="display:none;">×</button>
-      </div>
-      <button type="button" class="add-block-btn">
-        <i class="fas fa-plus"></i> Add time slot
-      </button>
-      <div class="total-hours-display">
-        <strong><span class="total-h">4.0</span> hours/day</strong>
-        <input type="hidden" class="hours" value="4.0" />
-      </div>
-    `;
+    timeContainer.innerHTML = timeSlotsContainerMarkup(null, "4.0");
   }
 
   container.appendChild(row);
